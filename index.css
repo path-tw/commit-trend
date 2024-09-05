@@ -6,6 +6,10 @@
 
 .graph {
   width: 750px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 30px;
 }
 
 body {
@@ -21,4 +25,5 @@ h1 {
   font-weight: 100;
   color: grey;
   text-align: center;
+  margin-bottom: 25px;
 }
