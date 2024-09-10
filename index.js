@@ -57,7 +57,6 @@ const renderGraph = ({ name, stat }) => {
     '10PM',
     '11PM',
   ];
-  console.log(name, stat);
   const repoName = document.createElement('h4');
   repoName.innerText = name;
   const canvas = document.createElement('canvas');
