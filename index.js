@@ -20,11 +20,17 @@ const days = [
   'Saturday',
 ];
 
-const renderGraph = ({name, stat}) => {
+const renderGraph = ({ name, stat }) => {
   const yesterday = stat.filter(s => s[0] === stat[0][0]);
   const today = stat.filter(s => s[0] === stat[stat.length - 1][0]);
   const todayYValues = today.map(s => s[2]);
   const yesterdayYValues = yesterday.map(s => s[2]);
+  const yesterdayLabel = days[stat[0][0]];
+  const todayLabel = days[stat[stat.length - 1][0]];
+  const total = [...yesterdayYValues, ...todayYValues].reduce(
+    (val, sum) => val + sum,
+    0
+  );
   const labels = [
     '12AM',
     '1AM',
@@ -50,12 +56,15 @@ const renderGraph = ({name, stat}) => {
     '9PM',
     '10PM',
     '11PM',
-    '12PM',
   ];
+  console.log(name, stat);
+  const repoName = document.createElement('h4');
+  repoName.innerText = name;
   const canvas = document.createElement('canvas');
   canvas.id = name;
   const container = document.createElement('div');
   container.className = 'graph';
+  container.append(repoName);
   container.append(canvas);
   document.getElementById('stats').append(container);
   new Chart(canvas, {
@@ -64,13 +73,13 @@ const renderGraph = ({name, stat}) => {
       labels: labels,
       datasets: [
         {
-          label: days[stat[stat.length - 1][0]],
-          data: todayYValues,
+          label: yesterdayLabel,
+          data: yesterdayYValues,
           borderWidth: 1,
         },
         {
-          label: days[stat[0][0]],
-          data: yesterdayYValues,
+          label: todayLabel,
+          data: todayYValues,
           borderWidth: 1,
         },
       ],
@@ -79,7 +88,7 @@ const renderGraph = ({name, stat}) => {
       plugins: {
         title: {
           display: true,
-          text: name,
+          text: `Total commits: ${total} (${yesterdayLabel} & ${todayLabel})`,
         },
       },
     },
