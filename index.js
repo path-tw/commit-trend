@@ -20,11 +20,11 @@ const days = [
   'Saturday',
 ];
 
-const createRepoNameWithLink = name => {
+const createRepoNameWithLink = (id, name) => {
   const div = document.createElement('div');
   div.classList.add('name-link-container');
   const repoName = document.createElement('h3');
-  repoName.innerText = name;
+  repoName.innerText = `${id}. ${name}`;
   div.appendChild(repoName);
   const repoUlr = document.createElement('a');
   repoUlr.href = `https://github.com/path-tw/${name}`;
@@ -34,29 +34,35 @@ const createRepoNameWithLink = name => {
 };
 
 const createStats = stat => {
+  let total = 0;
+  const yesterdayLabel = days[new Date().getDay() - 1];
+  const todayLabel = days[new Date().getDay()];
+  if (stat.length == 0) {
+    return {
+      total,
+      yesterdayLabel,
+      yesterdayYValues: [],
+      todayLabel,
+      todayYValues: [],
+    };
+  }
   const yesterday = stat.filter(s => s[0] === stat[0][0]);
   const today = stat.filter(s => s[0] === stat[stat.length - 1][0]);
   const todayYValues = today
     .filter(s => s[1] <= new Date().getHours())
     .map(s => s[2]);
   const yesterdayYValues = yesterday.map(s => s[2]);
-  const yesterdayLabel = days[stat[0][0]];
-  const todayLabel = days[stat[stat.length - 1][0]];
-  const total = [...yesterdayYValues, ...todayYValues].reduce(
+  total = [...yesterdayYValues, ...todayYValues].reduce(
     (val, sum) => val + sum,
-    0
+    total
   );
   return { total, yesterdayLabel, yesterdayYValues, todayLabel, todayYValues };
 };
 
-const renderGraph = ({
-  name,
-  total,
-  yesterdayLabel,
-  yesterdayYValues,
-  todayLabel,
-  todayYValues,
-}) => {
+const renderGraph = (
+  id,
+  { name, total, yesterdayLabel, yesterdayYValues, todayLabel, todayYValues }
+) => {
   const labels = [
     '12AM',
     '1AM',
@@ -88,7 +94,7 @@ const renderGraph = ({
   canvas.id = name;
   const container = document.createElement('div');
   container.className = 'graph';
-  container.append(createRepoNameWithLink(name));
+  container.append(createRepoNameWithLink(id, name));
   container.append(canvas);
   document.getElementById('stats').append(container);
   new Chart(canvas, {
@@ -120,7 +126,7 @@ const renderGraph = ({
 };
 
 const renderGraphs = details => {
-  details.forEach(repo => renderGraph(repo));
+  details.forEach((repo, index) => renderGraph(index + 1, repo));
 };
 
 window.onload = async () => {
@@ -130,11 +136,11 @@ window.onload = async () => {
   const today = getDay();
   const yesterday = getDay();
   const filtered = [];
+
   for (const { name, stats } of data) {
-    if (!Array.isArray(stats)) continue;
-    const stat = stats.filter(
-      stat => stat[0] === today || stat[0] === yesterday
-    );
+    const stat = Array.isArray(stats)
+      ? stats.filter(stat => stat[0] === today || stat[0] === yesterday)
+      : [];
     filtered.push({
       name,
       ...createStats(stat),
