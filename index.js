@@ -21,6 +21,7 @@ const days = [
 ];
 
 const renderGraph = ({ name, stat }) => {
+  if(stat.length == 0) return;
   const yesterday = stat.filter(s => s[0] === stat[0][0]);
   const today = stat.filter(s => s[0] === stat[stat.length - 1][0]);
   const todayYValues = today.map(s => s[2]);
