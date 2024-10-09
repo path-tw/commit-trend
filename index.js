@@ -33,11 +33,12 @@ const createRepoNameWithLink = name => {
   return div;
 };
 
-const renderGraph = ({ name, stat }) => {
-  if (stat.length == 0) return;
+const createStats = stat => {
   const yesterday = stat.filter(s => s[0] === stat[0][0]);
   const today = stat.filter(s => s[0] === stat[stat.length - 1][0]);
-  const todayYValues = today.map(s => s[2]);
+  const todayYValues = today
+    .filter(s => s[1] <= new Date().getHours())
+    .map(s => s[2]);
   const yesterdayYValues = yesterday.map(s => s[2]);
   const yesterdayLabel = days[stat[0][0]];
   const todayLabel = days[stat[stat.length - 1][0]];
@@ -45,6 +46,17 @@ const renderGraph = ({ name, stat }) => {
     (val, sum) => val + sum,
     0
   );
+  return { total, yesterdayLabel, yesterdayYValues, todayLabel, todayYValues };
+};
+
+const renderGraph = ({
+  name,
+  total,
+  yesterdayLabel,
+  yesterdayYValues,
+  todayLabel,
+  todayYValues,
+}) => {
   const labels = [
     '12AM',
     '1AM',
@@ -117,11 +129,16 @@ window.onload = async () => {
   const getDay = dayGenerator();
   const today = getDay();
   const yesterday = getDay();
-  const filtered = data.map(({ name, stats }) => ({
-    name,
-    stat: Array.isArray(stats)
-      ? stats.filter(stat => stat[0] === today || stat[0] === yesterday)
-      : [],
-  }));
-  renderGraphs(filtered);
+  const filtered = [];
+  for (const { name, stats } of data) {
+    if (!Array.isArray(stats)) continue;
+    const stat = stats.filter(
+      stat => stat[0] === today || stat[0] === yesterday
+    );
+    filtered.push({
+      name,
+      ...createStats(stat),
+    });
+  }
+  renderGraphs(filtered.sort((a, b) => b.total - a.total));
 };
