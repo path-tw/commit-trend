@@ -106,7 +106,7 @@ window.onload = async () => {
   const yesterday = getDay();
   const filtered = data.map(({name, stats}) => ({
     name,
-    stat: stats.filter(stat => stat[0] === today || stat[0] === yesterday),
+    stat: Array.isArray(stats) ? stats.filter(stat => stat[0] === today || stat[0] === yesterday) : [],
   }));
   renderGraphs(filtered);
 };
