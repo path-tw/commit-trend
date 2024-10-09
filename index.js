@@ -20,8 +20,21 @@ const days = [
   'Saturday',
 ];
 
+const createRepoNameWithLink = name => {
+  const div = document.createElement('div');
+  div.classList.add('name-link-container');
+  const repoName = document.createElement('h3');
+  repoName.innerText = name;
+  div.appendChild(repoName);
+  const repoUlr = document.createElement('a');
+  repoUlr.href = `https://github.com/path-tw/${name}`;
+  repoUlr.innerText = 'Access code here';
+  div.appendChild(repoUlr);
+  return div;
+};
+
 const renderGraph = ({ name, stat }) => {
-  if(stat.length == 0) return;
+  if (stat.length == 0) return;
   const yesterday = stat.filter(s => s[0] === stat[0][0]);
   const today = stat.filter(s => s[0] === stat[stat.length - 1][0]);
   const todayYValues = today.map(s => s[2]);
@@ -58,13 +71,12 @@ const renderGraph = ({ name, stat }) => {
     '10PM',
     '11PM',
   ];
-  const repoName = document.createElement('h4');
-  repoName.innerText = name;
+
   const canvas = document.createElement('canvas');
   canvas.id = name;
   const container = document.createElement('div');
   container.className = 'graph';
-  container.append(repoName);
+  container.append(createRepoNameWithLink(name));
   container.append(canvas);
   document.getElementById('stats').append(container);
   new Chart(canvas, {
@@ -100,14 +112,16 @@ const renderGraphs = details => {
 };
 
 window.onload = async () => {
-  const {time, data} = await fetch('data.json').then(res => res.json());
+  const { time, data } = await fetch('data.json').then(res => res.json());
   document.querySelector('#time').textContent = new Date(time).toLocaleString();
   const getDay = dayGenerator();
   const today = getDay();
   const yesterday = getDay();
-  const filtered = data.map(({name, stats}) => ({
+  const filtered = data.map(({ name, stats }) => ({
     name,
-    stat: Array.isArray(stats) ? stats.filter(stat => stat[0] === today || stat[0] === yesterday) : [],
+    stat: Array.isArray(stats)
+      ? stats.filter(stat => stat[0] === today || stat[0] === yesterday)
+      : [],
   }));
   renderGraphs(filtered);
 };
