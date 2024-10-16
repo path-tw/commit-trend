@@ -28,6 +28,7 @@ const createRepoNameWithLink = (id, name) => {
   div.appendChild(repoName);
   const repoUlr = document.createElement('a');
   repoUlr.href = `https://github.com/path-tw/${name}`;
+  repoUlr.target = '_blank';
   repoUlr.innerText = 'Access code here';
   div.appendChild(repoUlr);
   return div;
