@@ -55,9 +55,8 @@ const createRepoNameWithLink = (id, name) => {
 const transformData = ({ name, stats }) => {
   if (stats.length == 0) return {};
   const grouped = stats.reduce((acc, stat) => {
-    const [dayNum, hour, count] = stat;
-    if (dayNum == TODAY && hour > CURRENT_HOUR) return acc;
-    const day = days[dayNum];
+    const [day, hour, count] = stat;
+    if (day == TODAY && hour > CURRENT_HOUR) return acc;
     acc[day] = acc[day] || { hourlyCommitsCount: [], total: 0 };
     acc[day].hourlyCommitsCount.push(count);
     acc[day].total += count;
@@ -86,15 +85,13 @@ const renderGraph = (id, { name, grouped, totalCommits }) => {
     type: 'bar',
     data: {
       labels: labels,
-      datasets: Object.entries(grouped)
-        .filter(([_, dayStats]) => dayStats.total > 0)
-        .map(([day, dayStats]) => {
-          return {
-            label: day,
-            borderWidth: 1,
-            data: dayStats.hourlyCommitsCount,
-          };
-        }),
+      datasets: Object.entries(grouped).map(([day, dayStats]) => {
+        return {
+          label: `${days[day]} (${dayStats.total})`,
+          borderWidth: 1,
+          data: dayStats.hourlyCommitsCount,
+        };
+      }),
     },
     options: {
       plugins: {
