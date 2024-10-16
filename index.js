@@ -1,14 +1,5 @@
-const dayGenerator = () => {
-  let day = new Date().getDay();
-  return () => {
-    const before = day;
-    day = day - 1;
-    if (day < 0) {
-      day = 6;
-    }
-    return before;
-  };
-};
+const TODAY = new Date().getDay();
+const CURRENT_HOUR = new Date().getHours();
 
 const days = [
   'Sunday',
@@ -18,6 +9,33 @@ const days = [
   'Thursday',
   'Friday',
   'Saturday',
+];
+
+const labels = [
+  '12AM',
+  '1AM',
+  '2AM',
+  '3AM',
+  '4AM',
+  '5AM',
+  '6AM',
+  '7AM',
+  '8AM',
+  '9AM',
+  '10AM',
+  '11AM',
+  '12PM',
+  '1PM',
+  '2PM',
+  '3PM',
+  '4PM',
+  '5PM',
+  '6PM',
+  '7PM',
+  '8PM',
+  '9PM',
+  '10PM',
+  '11PM',
 ];
 
 const createRepoNameWithLink = (id, name) => {
@@ -34,63 +52,29 @@ const createRepoNameWithLink = (id, name) => {
   return div;
 };
 
-const createStats = stat => {
-  let total = 0;
-  const yesterdayLabel = days[new Date().getDay() - 1];
-  const todayLabel = days[new Date().getDay()];
-  if (stat.length == 0) {
-    return {
-      total,
-      yesterdayLabel,
-      yesterdayYValues: [],
-      todayLabel,
-      todayYValues: [],
-    };
-  }
-  const yesterday = stat.filter(s => s[0] === stat[0][0]);
-  const today = stat.filter(s => s[0] === stat[stat.length - 1][0]);
-  const todayYValues = today
-    .filter(s => s[1] <= new Date().getHours())
-    .map(s => s[2]);
-  const yesterdayYValues = yesterday.map(s => s[2]);
-  total = [...yesterdayYValues, ...todayYValues].reduce(
-    (val, sum) => val + sum,
-    total
+const transformData = ({ name, stats }) => {
+  if (stats.length == 0) return {};
+  const grouped = stats.reduce((acc, stat) => {
+    const [dayNum, hour, count] = stat;
+    if (dayNum == TODAY && hour > CURRENT_HOUR) return acc;
+    const day = days[dayNum];
+    acc[day] = acc[day] || { hourlyCommitsCount: [], total: 0 };
+    acc[day].hourlyCommitsCount.push(count);
+    acc[day].total += count;
+    return acc;
+  }, {});
+  const totalCommits = Object.values(grouped).reduce(
+    (sum, s) => sum + s.total,
+    0
   );
-  return { total, yesterdayLabel, yesterdayYValues, todayLabel, todayYValues };
+  return {
+    name,
+    grouped,
+    totalCommits,
+  };
 };
 
-const renderGraph = (
-  id,
-  { name, total, yesterdayLabel, yesterdayYValues, todayLabel, todayYValues }
-) => {
-  const labels = [
-    '12AM',
-    '1AM',
-    '2AM',
-    '3AM',
-    '4AM',
-    '5AM',
-    '6AM',
-    '7AM',
-    '8AM',
-    '9AM',
-    '10AM',
-    '11AM',
-    '12PM',
-    '1PM',
-    '2PM',
-    '3PM',
-    '4PM',
-    '5PM',
-    '6PM',
-    '7PM',
-    '8PM',
-    '9PM',
-    '10PM',
-    '11PM',
-  ];
-
+const renderGraph = (id, { name, grouped, totalCommits }) => {
   const canvas = document.createElement('canvas');
   canvas.id = name;
   const container = document.createElement('div');
@@ -102,24 +86,21 @@ const renderGraph = (
     type: 'bar',
     data: {
       labels: labels,
-      datasets: [
-        {
-          label: yesterdayLabel,
-          data: yesterdayYValues,
-          borderWidth: 1,
-        },
-        {
-          label: todayLabel,
-          data: todayYValues,
-          borderWidth: 1,
-        },
-      ],
+      datasets: Object.entries(grouped)
+        .filter(([_, dayStats]) => dayStats.total > 0)
+        .map(([day, dayStats]) => {
+          return {
+            label: day,
+            borderWidth: 1,
+            data: dayStats.hourlyCommitsCount,
+          };
+        }),
     },
     options: {
       plugins: {
         title: {
           display: true,
-          text: `Total commits: ${total} (${yesterdayLabel} & ${todayLabel})`,
+          text: `Total commits: ${totalCommits}`,
         },
       },
     },
@@ -132,20 +113,16 @@ const renderGraphs = details => {
 
 window.onload = async () => {
   const { time, data } = await fetch('data.json').then(res => res.json());
-  document.querySelector('#time').textContent = new Date(time).toLocaleString();
-  const getDay = dayGenerator();
-  const today = getDay();
-  const yesterday = getDay();
-  const filtered = [];
+  document.querySelector('#time').innerText = new Date(time).toLocaleString();
 
-  for (const { name, stats } of data) {
-    const stat = Array.isArray(stats)
-      ? stats.filter(stat => stat[0] === today || stat[0] === yesterday)
-      : [];
-    filtered.push({
-      name,
-      ...createStats(stat),
-    });
-  }
-  renderGraphs(filtered.sort((a, b) => b.total - a.total));
+  const statsTillToday = data
+    .filter(s => Array.isArray(s.stats))
+    .map(s => ({
+      name: s.name,
+      stats: s.stats.filter(x => x[0] <= TODAY),
+    }));
+
+  const stats = statsTillToday.map(transformData);
+
+  renderGraphs(stats.sort((a, b) => b.totalCommits - a.totalCommits));
 };
