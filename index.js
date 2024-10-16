@@ -85,13 +85,15 @@ const renderGraph = (id, { name, grouped, totalCommits }) => {
     type: 'bar',
     data: {
       labels: labels,
-      datasets: Object.entries(grouped).map(([day, dayStats]) => {
-        return {
-          label: `${days[day]} (${dayStats.total})`,
-          borderWidth: 1,
-          data: dayStats.hourlyCommitsCount,
-        };
-      }),
+      datasets: Object.entries(grouped)
+        .filter(([day, dayStats]) => dayStats.total > 0 || day == TODAY)
+        .map(([day, dayStats]) => {
+          return {
+            label: `${days[day]} (${dayStats.total})`,
+            borderWidth: 1,
+            data: dayStats.hourlyCommitsCount,
+          };
+        }),
     },
     options: {
       plugins: {
